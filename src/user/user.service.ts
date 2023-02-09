@@ -1,0 +1,68 @@
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from './entities/user.entity'
+
+export class UserService {
+  constructor(
+    @InjectModel('User') private UserModel: Model<User>,
+    ) { }
+  
+    async create(createUserDto: CreateUserDto) {
+      try {
+        const newUser = await this.UserModel.create(createUserDto);
+        const savedUser = await newUser.save();
+        return savedUser;
+      } catch (err) {
+        throw err;
+      }
+  }
+
+  async findAll() {
+    try {
+    const allUsers = await this.UserModel.find({}, {role: 0}).populate({ 
+      path: 'children',
+      populate: {
+        path: 'alerts',
+        model: 'Alert'
+      } 
+   }).exec();
+    if (!allUsers) throw new Error("no records found")
+      return allUsers;
+    } catch(err) {
+      throw err;
+    }  
+  }
+
+  async findOne(id: string) {
+    try {
+    const thisUser = await this.UserModel.findOne({_id: id}).populate({ 
+      path: 'children',
+      populate: {
+        path: 'alerts',
+        model: 'Alert'
+      } 
+   }).exec();
+    if (!thisUser) throw new Error("no record found")
+      return thisUser;
+    } catch(err) {
+      throw err;
+    }  
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    console.log(id, updateUserDto);
+    return await this.UserModel.findOneAndUpdate({ _id: id }, updateUserDto, { returnDocument: 'after', populate: { 
+      path: 'children',
+      populate: {
+        path: 'alerts',
+        model: 'Alert'
+      } 
+   }})
+  }
+
+  async remove(id: string) {
+    return await this.UserModel.findOneAndDelete({ _id: id })
+  }
+}
