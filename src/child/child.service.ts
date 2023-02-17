@@ -48,9 +48,10 @@ export class ChildService {
     return await this.ChildModel.findOneAndUpdate({ _id: id }, updateChildDto, { returnDocument: 'after', populate: 'chores alerts'})
   }
 
-  async markChoreAsDone(childId: string, choreId: string) {
+  async markChoreAsDone(childId: string, chore: string) {
+    console.log(chore, "<--- chore ID")
     const completedChore = {
-      _id: choreId,
+      _id: chore,
       dateCompleted: new Date()
     }
     const outDatedChild = await this.ChildModel.findOne({_id: childId});

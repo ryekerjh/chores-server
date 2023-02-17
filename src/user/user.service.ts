@@ -15,7 +15,7 @@ export class UserService {
         const savedUser = await newUser.save();
         return savedUser;
       } catch (err) {
-        throw err;
+        throw err
       }
   }
 
@@ -51,8 +51,17 @@ export class UserService {
     }  
   }
 
+  async findOneByEmail(email: string) {
+    try {
+    const thisUser = await this.UserModel.findOne({email}).select('+password').exec();
+    if (!thisUser) throw new Error(`No user with the email address ${email} exists.`)
+      return thisUser;
+    } catch(err) {
+      throw err;
+    }  
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto) {
-    console.log(id, updateUserDto);
     return await this.UserModel.findOneAndUpdate({ _id: id }, updateUserDto, { returnDocument: 'after', populate: { 
       path: 'children',
       populate: {
@@ -64,5 +73,19 @@ export class UserService {
 
   async remove(id: string) {
     return await this.UserModel.findOneAndDelete({ _id: id })
+  }
+
+  async getChildrenByUser(userId: string) {
+    const user = await this.UserModel.findOne({ _id: userId}).populate({ 
+      path: 'children',
+      populate: [{
+        path: 'alerts',
+        model: 'Alert'
+      },{
+        path: 'chores',
+        model: 'Chore'
+      }]  
+   }).exec();
+    return user.children;
   }
 }

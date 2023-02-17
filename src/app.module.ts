@@ -11,6 +11,9 @@ import { UserModule } from './user/user.module';
 import { ChildModule } from './child/child.module';
 import { ChoreModule } from './chore/chore.module';
 import { AlertModule } from './alert/alert.module';
+import { AuthModule } from './auth/auth.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 
 @Module({
@@ -29,9 +32,13 @@ import { AlertModule } from './alert/alert.module';
     ChildModule,
     ChoreModule,
     AlertModule,
+    AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, {
+    provide: APP_GUARD,
+    useClass: JwtAuthGuard,
+  },],
 })
 
 export class AppModule {}

@@ -11,7 +11,7 @@ export class User {
   @Prop({ type: [ mongoose.Schema.Types.ObjectId], ref: Child.name, autopopulate: true })
   children: Child[];
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   email: String;
 
   @Prop({ 
@@ -22,6 +22,9 @@ export class User {
  
   @Prop({ type: [ mongoose.Schema.Types.ObjectId], ref: Alert.name })
   alerts: Alert[];
+
+  @Prop({ required: true, select: false })
+  password: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

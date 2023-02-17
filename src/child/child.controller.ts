@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { UpdateChoreDto } from 'src/chore/dto/update-chore.dto';
 import { ChildService } from './child.service';
 import { CreateChildDto } from './dto/create-child.dto';
 import { UpdateChildDto } from './dto/update-child.dto';
@@ -27,9 +28,10 @@ export class ChildController {
     return this.childService.update(id, updateChildDto);
   }
 
-  @Patch(':childId/mark-chore-done/:choreId')
-  markChoreAsDone(@Param('childId') childId: string, @Param('choreId') choreId: string) {
-    return this.childService.markChoreAsDone(childId, choreId)
+  @Patch(':childId/mark-chore-done')
+  markChoreAsDone(@Param('childId') childId: string, @Body() body: {choreId: string}) {
+    console.log(childId, "<<>>",  body)
+    return this.childService.markChoreAsDone(childId, body.choreId)
   }
 
   @Patch(':parentId/add-alert-to-parent/:alertId')

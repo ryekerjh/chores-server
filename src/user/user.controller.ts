@@ -17,6 +17,11 @@ export class UserController {
     return await this.userService.findAll();
   }
 
+  @Get(':userId/get-children')
+  async findChildrenByUser(@Param('userId') userId: string) {
+    return await this.userService.getChildrenByUser(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.findOne(id);
