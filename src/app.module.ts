@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -14,7 +14,8 @@ import { AlertModule } from './alert/alert.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
-
+import { AttachUserToRequest } from './middlewares/attachUserToRequest.middleware';
+import { UserIsRequester } from './middlewares/userIsRequester.middleware';
 
 @Module({
   imports: [
@@ -41,4 +42,9 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
   },],
 })
 
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AttachUserToRequest,UserIsRequester)
+      .forRoutes({ path: 'alert/*', method: RequestMethod.PATCH });
+  }}

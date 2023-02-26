@@ -30,8 +30,13 @@ export class ChildController {
 
   @Patch(':childId/mark-chore-done')
   markChoreAsDone(@Param('childId') childId: string, @Body() body: {choreId: string}) {
-    console.log(childId, "<<>>",  body)
     return this.childService.markChoreAsDone(childId, body.choreId)
+  }
+
+  @Patch(':childId/cancel-chore-done')
+  markChoreAsNotDone(@Param('childId') childId: string, @Body() body: {choreId: string}) {
+    console.log(childId, "<<>>",  body)
+    return this.childService.markChoreAsNotDone(childId, body.choreId)
   }
 
   @Patch(':parentId/add-alert-to-parent/:alertId')

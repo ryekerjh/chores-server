@@ -37,13 +37,17 @@ export class UserService {
 
   async findOne(id: string) {
     try {
-    const thisUser = await this.UserModel.findOne({_id: id}).populate({ 
+    const thisUser = await this.UserModel
+    .findOne({_id: id})
+    .populate({ 
       path: 'children',
       populate: {
         path: 'alerts',
         model: 'Alert'
-      } 
-   }).exec();
+      }, 
+   })
+   .populate('alerts')
+   .exec();
     if (!thisUser) throw new Error("no record found")
       return thisUser;
     } catch(err) {
@@ -88,4 +92,19 @@ export class UserService {
    }).exec();
     return user.children;
   }
+  
+  async removeAlertFromUser(id: string, alertId: string) {
+    const user = await this.UserModel.findOne({ _id: id });
+    console.log(user, "<--- before")
+    user.alerts = user?.alerts?.filter(alert => alert.toString() !== alertId);
+    console.log(user?.alerts, "<--- after")
+    return await this.UserModel.findOneAndUpdate({ _id: id }, user, { returnDocument: 'after', populate: { 
+      path: 'children',
+      populate: {
+        path: 'alerts',
+        model: 'Alert'
+      } 
+   }});
+  }
 }
+

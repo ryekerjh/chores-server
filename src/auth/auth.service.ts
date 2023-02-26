@@ -44,4 +44,8 @@ export class AuthService {
       throw err;
     }
   }
+
+  decode (jwtToken: string) {
+    return this.jwtService.decode(jwtToken);
+  }
 }

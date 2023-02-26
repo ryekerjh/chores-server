@@ -3,6 +3,9 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+type UpdateAlertByOwner = {
+  alertId: string;
+}
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -30,6 +33,11 @@ export class UserController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
+  }
+
+  @Patch(':id/remove-task')
+  removeAlertFromUser(@Param('id') id: string, @Body() alertId: UpdateAlertByOwner) {
+    return this.userService.removeAlertFromUser(id, alertId.alertId);
   }
 
   @Delete(':id')

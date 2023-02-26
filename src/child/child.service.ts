@@ -49,7 +49,6 @@ export class ChildService {
   }
 
   async markChoreAsDone(childId: string, chore: string) {
-    console.log(chore, "<--- chore ID")
     const completedChore = {
       _id: chore,
       dateCompleted: new Date()
@@ -58,9 +57,15 @@ export class ChildService {
     const updatedCompletedChoresList = [...outDatedChild.completedChores, completedChore];
     return await this.ChildModel.findOneAndUpdate({ _id: childId }, {completedChores: updatedCompletedChoresList}, { returnDocument: 'after', populate: 'chores alerts'})
   }
+  
+  async markChoreAsNotDone(childId: string, chore: string) {
+    const outDatedChild = await this.ChildModel.findOne({_id: childId});
+    const updatedCompletedChoresList = outDatedChild.completedChores.filter(c => c._id.toString() !== chore);
+    return await this.ChildModel.findOneAndUpdate({ _id: childId }, {completedChores: updatedCompletedChoresList}, { returnDocument: 'after', populate: 'chores alerts'})
+  }
+  
 
   async addAlertToParentUser(parentId: string, alertId: string) {
-    
     function dedupeIDs(objectIDs) {
       const ids = {}
       objectIDs.forEach(_id => (ids[_id.toString()] = _id))
@@ -70,7 +75,7 @@ export class ChildService {
     const parent = await this.userService.findOne(parentId);
     const updatedParentAlerts = [...parent.alerts, alertId];
     await this.userService.update(parentId, {alerts: dedupeIDs(updatedParentAlerts) as any})
-    return 'success';
+    return dedupeIDs(updatedParentAlerts);
   }
 
   async remove(id: string) {
