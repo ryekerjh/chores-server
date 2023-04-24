@@ -22,6 +22,11 @@ export class AlertController {
     return this.alertService.findOne(id);
   }
 
+  @Get('alerts-for-user/:userId')
+  findAllByUser(@Param('userId') userId: string) {
+    return this.alertService.findAllByUser(userId)
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAlertDto: UpdateAlertDto) {
     return this.alertService.update(id, updateAlertDto);

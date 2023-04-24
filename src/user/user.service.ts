@@ -11,6 +11,7 @@ export class UserService {
   
     async create(createUserDto: CreateUserDto) {
       try {
+        createUserDto.role = 'admin';
         const newUser = await this.UserModel.create(createUserDto);
         const savedUser = await newUser.save();
         return savedUser;
@@ -65,7 +66,17 @@ export class UserService {
     }  
   }
 
+  async findUserTasks(id: string) {
+    try {
+      const user = await this.UserModel.findOne({_id: id }).populate('alerts').exec();
+      return user.alerts;
+    } catch (err) {
+      throw err;
+    }
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto) {
+    delete updateUserDto.role;
     return await this.UserModel.findOneAndUpdate({ _id: id }, updateUserDto, { returnDocument: 'after', populate: { 
       path: 'children',
       populate: {
@@ -73,6 +84,15 @@ export class UserService {
         model: 'Alert'
       } 
    }})
+  }
+
+  async updateUserRole(id: string, role: string) {
+    try {
+    await this.UserModel.findOneAndUpdate({ _id: id }, { role });
+    return { message: `Successfully updated the role to ${role}`}
+    } catch(err) {
+      return new Error(`We could not update the role because ${err.message}.`)
+    }
   }
 
   async remove(id: string) {
@@ -95,9 +115,7 @@ export class UserService {
   
   async removeAlertFromUser(id: string, alertId: string) {
     const user = await this.UserModel.findOne({ _id: id });
-    console.log(user, "<--- before")
     user.alerts = user?.alerts?.filter(alert => alert.toString() !== alertId);
-    console.log(user?.alerts, "<--- after")
     return await this.UserModel.findOneAndUpdate({ _id: id }, user, { returnDocument: 'after', populate: { 
       path: 'children',
       populate: {

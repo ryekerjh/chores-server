@@ -16,6 +16,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AttachUserToRequest } from './middlewares/attachUserToRequest.middleware';
 import { UserIsRequester } from './middlewares/userIsRequester.middleware';
+import { StripAndCheckRole } from './middlewares/stripAndCheckRole.middleware';
 
 @Module({
   imports: [
@@ -47,4 +48,7 @@ export class AppModule implements NestModule {
     consumer
       .apply(AttachUserToRequest,UserIsRequester)
       .forRoutes({ path: 'alert/*', method: RequestMethod.PATCH });
+    consumer
+      .apply(StripAndCheckRole)
+      .forRoutes({ path: 'user/:id/update-role', method: RequestMethod.PATCH });
   }}

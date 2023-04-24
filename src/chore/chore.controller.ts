@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request } from '@nestjs/common';
 import { ChoreService } from './chore.service';
 import { CreateChoreDto } from './dto/create-chore.dto';
 import { UpdateChoreDto } from './dto/update-chore.dto';
@@ -8,13 +8,18 @@ export class ChoreController {
   constructor(private readonly choreService: ChoreService) {}
 
   @Post()
-  create(@Body() createChoreDto: CreateChoreDto) {
-    return this.choreService.create(createChoreDto);
+  create(@Body() createChoreDto: CreateChoreDto, @Request() req) {
+    return this.choreService.create(createChoreDto, req?.user?.userId);
   }
 
   @Get()
   findAll() {
     return this.choreService.findAll();
+  }
+
+  @Get('chores-by-user/:userId')
+  findAllByUser(@Param('userId') userId: string) {
+    return this.choreService.findAllByUser(userId);
   }
 
   @Get(':id')

@@ -40,7 +40,6 @@ export class AuthService {
       const createdUser = await this.userService.create(baseData);
       return createdUser;
     } catch(err) {
-      console.error(err.message, "<------");
       throw err;
     }
   }

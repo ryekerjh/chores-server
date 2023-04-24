@@ -35,7 +35,6 @@ export class ChildController {
 
   @Patch(':childId/cancel-chore-done')
   markChoreAsNotDone(@Param('childId') childId: string, @Body() body: {choreId: string}) {
-    console.log(childId, "<<>>",  body)
     return this.childService.markChoreAsNotDone(childId, body.choreId)
   }
 

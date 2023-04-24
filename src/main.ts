@@ -10,6 +10,6 @@ async function bootstrap() {
   });
 
   app.use(helmet());
-  await app.listen(process.env.PORT || 8080);
+  await app.listen(process.env.PORT || 443);
 }
 bootstrap();

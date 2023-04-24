@@ -30,9 +30,19 @@ export class UserController {
     return this.userService.findOne(id);
   }
 
+  @Get(':id/get-tasks')
+  async findUserTasks(@Param('id') id: string) {
+    return await this.userService.findUserTasks(id);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.update(id, updateUserDto);
+  }
+
+  @Patch(':id/update-role')
+  async updateUserRole(@Param('id') id: string, @Body() role: { role: string}) {
+    return await this.userService.updateUserRole(id, role.role)
   }
 
   @Patch(':id/remove-task')

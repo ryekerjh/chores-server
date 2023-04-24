@@ -1,12 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { UpdateAlertDto } from './dto/update-alert.dto';
 import { Alert } from './entities/alert.entity';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AlertService {
+  @Inject(UserService)
+  private readonly userService: UserService;
+  
   constructor(
     @InjectModel('Alert') private AlertModel: Model<Alert>,
     ) {}
@@ -39,6 +43,17 @@ export class AlertService {
       } catch(err) {
         throw err;
       }  
+  }
+
+  async findAllByUser(userId: string) {
+    try {
+      const requestingUser = await this.userService.findOne(userId);
+      const lookupPromises = requestingUser.alerts.map(async alertId => await this.AlertModel.findOne({_id: alertId}));
+      const alerts = await Promise.all(lookupPromises);
+      return alerts;
+    } catch(err) {
+      throw err;
+    }
   }
 
   async update(id: string, updateAlertDto: UpdateAlertDto) {
