@@ -10,7 +10,7 @@ import { UserModule } from 'src/user/user.module';
   providers: [AlertService],
   imports: [
     MongooseModule.forFeature([{ name: 'Alert', schema: AlertSchema}]),
-    forwardRef(() => UserModule)
+    forwardRef(() => UserModule),
   ],
   exports: [
     AlertService  
