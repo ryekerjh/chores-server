@@ -124,5 +124,14 @@ export class UserService {
       } 
    }});
   }
+
+  async checkPin(pin: number, userId: string) {
+    try {
+      const pinMatch = await this.UserModel.findOne({ _id: userId, pin});
+      return !!pinMatch;
+    } catch (err) {
+      throw err;
+    }
+  }
 }
 

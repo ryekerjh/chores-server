@@ -25,6 +25,9 @@ export class User {
 
   @Prop({ required: true, select: false })
   password: string;
+
+  @Prop({ required: false, maxLength: 8, minLength: 3 })
+  pin: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
