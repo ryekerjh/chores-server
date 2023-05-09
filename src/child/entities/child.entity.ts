@@ -17,7 +17,7 @@ export class Child {
   @Prop()
   icon: string;
   
-  @Prop({ type: [ mongoose.Schema.Types.ObjectId ], ref: Chore.name })
+  @Prop({ type: [ mongoose.Schema.Types.ObjectId ], ref: Chore.name, unique: true })
   chores: Chore[];
 
   @Prop({ type: [ mongoose.Schema.Types.ObjectId ], ref: Alert.name })

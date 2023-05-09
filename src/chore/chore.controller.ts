@@ -3,6 +3,10 @@ import { ChoreService } from './chore.service';
 import { CreateChoreDto } from './dto/create-chore.dto';
 import { UpdateChoreDto } from './dto/update-chore.dto';
 
+export interface UpdateChoreWithAssignees {
+  chore: UpdateChoreDto & { assignees: string[]};
+  originalAssignees: string[];
+}
 @Controller('chore')
 export class ChoreController {
   constructor(private readonly choreService: ChoreService) {}
@@ -28,7 +32,7 @@ export class ChoreController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateChoreDto: UpdateChoreDto) {
+  update(@Param('id') id: string, @Body() updateChoreDto: UpdateChoreWithAssignees) {
     return this.choreService.update(id, updateChoreDto);
   }
 
