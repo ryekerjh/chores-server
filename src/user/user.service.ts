@@ -40,16 +40,22 @@ export class UserService {
     try {
     const thisUser = await this.UserModel
     .findOne({_id: id})
-    .populate({ 
+   .populate('alerts')
+   .populate({ 
       path: 'children',
-      populate: {
+      populate: [{
         path: 'alerts',
         model: 'Alert'
-      }, 
-   })
-   .populate('alerts')
+      },
+      {
+        path: 'chores',
+        model: 'Chore'
+      }]  
+  })
    .exec();
+
     if (!thisUser) throw new Error("no record found")
+      
       return thisUser;
     } catch(err) {
       throw err;
@@ -58,7 +64,17 @@ export class UserService {
 
   async findOneByEmail(email: string) {
     try {
-    const thisUser = await this.UserModel.findOne({email}).select('+password').exec();
+    const thisUser = await this.UserModel.findOne({email}).select('+password').populate({ 
+      path: 'children',
+      populate: [{
+        path: 'alerts',
+        model: 'Alert'
+      },
+      {
+        path: 'chores',
+        model: 'Chore'
+      }]  
+  }).exec();
     if (!thisUser) throw new Error(`No user with the email address ${email} exists.`)
       return thisUser;
     } catch(err) {
@@ -77,13 +93,17 @@ export class UserService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     delete updateUserDto.role;
-    return await this.UserModel.findOneAndUpdate({ _id: id }, updateUserDto, { returnDocument: 'after', populate: { 
+    return await this.UserModel.findOneAndUpdate({ _id: id }, updateUserDto, { returnDocument: 'after', populate: [{ 
       path: 'children',
       populate: {
         path: 'alerts',
         model: 'Alert'
       } 
-   }})
+  },
+  {
+    path: 'alerts'
+  }
+]})
   }
 
   async updateUserRole(id: string, role: string) {
@@ -116,13 +136,17 @@ export class UserService {
   async removeAlertFromUser(id: string, alertId: string) {
     const user = await this.UserModel.findOne({ _id: id });
     user.alerts = user?.alerts?.filter(alert => alert.toString() !== alertId);
-    return await this.UserModel.findOneAndUpdate({ _id: id }, user, { returnDocument: 'after', populate: { 
+    return await this.UserModel.findOneAndUpdate({ _id: id }, user, { returnDocument: 'after', populate: [{ 
       path: 'children',
       populate: {
         path: 'alerts',
         model: 'Alert'
       } 
-   }});
+  },
+  {
+    path: 'alerts'
+  }
+]});
   }
 
   async checkPin(pin: number, userId: string) {

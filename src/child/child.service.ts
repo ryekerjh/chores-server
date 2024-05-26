@@ -74,8 +74,8 @@ export class ChildService {
 
     const parent = await this.userService.findOne(parentId);
     const updatedParentAlerts = [...parent.alerts, alertId];
-    await this.userService.update(parentId, {alerts: dedupeIDs(updatedParentAlerts) as any})
-    return dedupeIDs(updatedParentAlerts);
+    const updatedUser = await this.userService.update(parentId, {alerts: dedupeIDs(updatedParentAlerts) as any})
+    return updatedUser.alerts;
   }
 
   async remove(id: string) {
