@@ -24,10 +24,10 @@ export class Child {
   alerts: Alert[];
 
   @Prop()
-  completedChores: [{
+  completedChores: {
     _id: string;
     dateCompleted: string;
-  }]
+  }[]
 }
 
 export const ChildSchema = SchemaFactory.createForClass(Child);

@@ -17,6 +17,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { AttachUserToRequest } from './middlewares/attachUserToRequest.middleware';
 import { UserIsRequester } from './middlewares/userIsRequester.middleware';
 import { StripAndCheckRole } from './middlewares/stripAndCheckRole.middleware';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { StripAndCheckRole } from './middlewares/stripAndCheckRole.middleware';
     ChoreModule,
     AlertModule,
     AuthModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService, {
