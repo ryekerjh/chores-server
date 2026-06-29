@@ -1,27 +1,38 @@
-import { Controller, Request, Post, Get, Res } from '@nestjs/common';
+import { Controller, Request, Post, Get, Res, Headers } from '@nestjs/common';
 import { AuthService } from './auth/auth.service';
 import { Public } from './auth/public-route.guard';
+import { AlertService } from './alert/alert.service';
 
 @Controller()
 export class AppController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService, private alertService: AlertService) {}
   
   @Public()
   @Post('auth/login')
-  async login(@Request() req, @Res() res) {
+  async login(@Request() req, @Res() res, @Headers('x-platform') platform: string) {
     try {
-    const response = {};
-    const loginUser =  await this.authService.validateUser(req.body.email, req.body.password );
-    const { access_token } = await this.authService.login(loginUser);
-    response['token'] = access_token;
-    response['body'] = loginUser;
-    res.send(response);
-    return loginUser;
+      const response = {};
+      const loginUser =  await this.authService.validateUser(req.body.email, req.body.password );
+      const { access_token } = await this.authService.login(loginUser);
+
+      if (platform === 'mobile') {
+        // Return a different payload for mobile
+        response['token'] = access_token;
+        response['userId'] = loginUser['_id'];
+        response['alerts'] = await this.alertService.findAllByUser(loginUser['_id'] );
+      } else {
+        // Default payload for browser or other platforms
+        response['token'] = access_token;
+        response['body'] = loginUser;
+      }
+
+      res.send(response);
+      return loginUser;
     } catch(err) {
-      res.send({
-        error: err.message,
+      res.status(401).send({
+        error: (err as Error).message,
         code: 401
-      })
+      });
     }
   }
 
@@ -37,7 +48,7 @@ export class AppController {
       res.send(response);
     } catch(err) {
       res.send({
-        error: err.message,
+        error: (err as Error).message,
         code: 403
       });
     }

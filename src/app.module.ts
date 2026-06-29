@@ -23,8 +23,6 @@ import { ScheduleModule } from '@nestjs/schedule';
   imports: [
     ConfigModule.forRoot(),
     MongooseModule.forRoot(process.env.MONGO_URL, { 
-      useNewUrlParser: true, 
-      useUnifiedTopology: true, 
       dbName: 'chores_app',
     }),
     MongooseModule.forFeature([{ name: 'User', schema: UserSchema}]),

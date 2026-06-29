@@ -44,13 +44,13 @@ export class ChoreService {
 
   async findAllByUser(userId: string) {
     try {
-      const theseChores = await this.ChoreModel.find({createdBy: userId}).exec();
+      const theseChores = await this.ChoreModel.find({ createdBy: userId as any }).exec();
       if (!theseChores?.length) throw new Error("no chores found")
       const user = await this.userService.findOne(userId);
       const userChildren = user?.children;
       const newArray = [];
       const choresCopy = theseChores.forEach(c => {
-        let shallowCopy = {...c.toObject()};
+        let shallowCopy = { ...(c as any).toObject() };
         shallowCopy['assignees'] = [];
         userChildren?.forEach(uc => {
           uc.chores.forEach(ucc => {
@@ -92,7 +92,6 @@ export class ChoreService {
   const childAdditionUpdates = Promise.all(assigneesToWhomToAddChore.map(async childToWhomToAddChore => {
     const childToUpdate = await this.childService.findOne(childToWhomToAddChore);
     childToUpdate.chores.push(id as any);
-    console.log(childToUpdate.chores, "<--- updated chores for child it was added to", id);
     await this.childService.update(childToWhomToAddChore, {...childToUpdate, $addToSet: {chores: id} } as any);
   }));
 

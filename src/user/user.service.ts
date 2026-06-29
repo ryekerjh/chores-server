@@ -111,7 +111,7 @@ export class UserService {
     await this.UserModel.findOneAndUpdate({ _id: id }, { role });
     return { message: `Successfully updated the role to ${role}`}
     } catch(err) {
-      return new Error(`We could not update the role because ${err.message}.`)
+      return new Error(`We could not update the role because ${(err as Error).message}.`)
     }
   }
 
@@ -142,11 +142,11 @@ export class UserService {
         path: 'alerts',
         model: 'Alert'
       } 
-  },
-  {
-    path: 'alerts'
-  }
-]});
+      },
+      {
+        path: 'alerts'
+      }
+    ]});
   }
 
   async checkPin(pin: number, userId: string) {

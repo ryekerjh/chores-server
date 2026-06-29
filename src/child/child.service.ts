@@ -2,11 +2,11 @@ import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Cron } from '@nestjs/schedule';
-import * as moment from 'moment';
+import moment from 'moment';
 import { UserService } from 'src/user/user.service';
 import { CreateChildDto } from './dto/create-child.dto';
 import { UpdateChildDto } from './dto/update-child.dto';
-import { Child } from './entities/child.entity';
+import { Child, ChildDocument } from './entities/child.entity';
 import { uniqBy } from 'lodash';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class ChildService {
   private readonly logger = new Logger(ChildService.name);
 
   constructor(
-    @InjectModel('Child') private ChildModel: Model<Child>,
+    @InjectModel('Child') private ChildModel: Model<ChildDocument>,
     private userService: UserService
   ) {}
 
@@ -118,7 +118,7 @@ export class ChildService {
       // Fetch all Child records that have completedChores older than 30 days
       const children = await this.ChildModel.find({
         'completedChores.dateCompleted': { $lt: thirtyDaysAgo },
-      });
+      } as any);
 
       // Iterate over each child and update the completedChores array
       for (const child of children) {
