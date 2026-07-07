@@ -78,26 +78,25 @@ export class ChoreService {
   }
 
  async update(id: string, updateChoreDto: UpdateChoreWithAssignees) {
-  // TODO: remove chore from Child if they are not in the assignees array that gets passed in
   const { chore, originalAssignees } = updateChoreDto;
-    const assigneesToDeleteChoreFrom = _.difference(originalAssignees, chore.assignees);
-    const assigneesToWhomToAddChore = _.difference(chore.assignees, originalAssignees);
-  // We must add this chore to all users in the chore.assignees array and remove it from any users that have it that aren't in this array
-  const childRemovalUpdates = Promise.all(assigneesToDeleteChoreFrom.map(async childFromWhomToDeleteChore => {
-    const childToUpdate = await this.childService.findOne(childFromWhomToDeleteChore);
-    childToUpdate.chores.splice(childToUpdate.chores.findIndex(ch => ch['_id'] === id), 1);
-    console.log(childToUpdate.chores, "<--- updated chores for child it was removed from", id);
-    await this.childService.update(childFromWhomToDeleteChore, childToUpdate);
-  }));
-  const childAdditionUpdates = Promise.all(assigneesToWhomToAddChore.map(async childToWhomToAddChore => {
-    const childToUpdate = await this.childService.findOne(childToWhomToAddChore);
-    childToUpdate.chores.push(id as any);
-    await this.childService.update(childToWhomToAddChore, {...childToUpdate, $addToSet: {chores: id} } as any);
-  }));
+  const assigneesToDeleteChoreFrom = _.difference(originalAssignees, chore.assignees);
+  const assigneesToWhomToAddChore = _.difference(chore.assignees, originalAssignees);
 
-  await [...await childRemovalUpdates, ...await childAdditionUpdates];
-  // this.childService.update()
-  return await this.ChoreModel.findOneAndUpdate({ _id: id }, updateChoreDto, { returnDocument: 'after'})
+  await Promise.all([
+    ...assigneesToDeleteChoreFrom.map((childId) =>
+      this.childService.update(childId, { $pull: { chores: id } } as any),
+    ),
+    ...assigneesToWhomToAddChore.map((childId) =>
+      this.childService.update(childId, { $addToSet: { chores: id } } as any),
+    ),
+  ]);
+
+  const { assignees, ...choreFields } = chore;
+  return await this.ChoreModel.findOneAndUpdate(
+    { _id: id },
+    choreFields,
+    { returnDocument: 'after' },
+  );
 }
 
   async remove(id: string) {
