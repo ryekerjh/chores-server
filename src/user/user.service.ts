@@ -132,6 +132,13 @@ export class UserService {
    }).exec();
     return user.children;
   }
+
+  async pullAlertFromAllUsers(alertId: string) {
+    return await this.UserModel.updateMany(
+      { alerts: alertId } as any,
+      { $pull: { alerts: alertId } },
+    );
+  }
   
   async removeAlertFromUser(id: string, alertId: string) {
     const user = await this.UserModel.findOne({ _id: id });

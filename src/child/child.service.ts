@@ -1,13 +1,25 @@
-import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Cron } from '@nestjs/schedule';
 import moment from 'moment';
 import { UserService } from 'src/user/user.service';
+import { CompletionStatService } from 'src/completion-stat/completion-stat.service';
 import { CreateChildDto } from './dto/create-child.dto';
 import { UpdateChildDto } from './dto/update-child.dto';
 import { Child, ChildDocument } from './entities/child.entity';
-import { uniqBy } from 'lodash';
+import { Chore } from 'src/chore/entities/chore.entity';
+import { User } from 'src/user/entities/user.entity';
+
+const DAYS_OF_WEEK = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
 
 @Injectable()
 export class ChildService {
@@ -15,7 +27,10 @@ export class ChildService {
 
   constructor(
     @InjectModel('Child') private ChildModel: Model<ChildDocument>,
-    private userService: UserService
+    @InjectModel('Chore') private ChoreModel: Model<Chore>,
+    @InjectModel('User') private UserModel: Model<User>,
+    private userService: UserService,
+    private readonly completionStatService: CompletionStatService,
   ) {}
 
   async create(createChildDto: CreateChildDto) {
@@ -70,11 +85,13 @@ export class ChildService {
       ...outDatedChild.completedChores,
       completedChore,
     ];
-    return await this.ChildModel.findOneAndUpdate(
+    const updatedChild = await this.ChildModel.findOneAndUpdate(
       { _id: childId },
       { completedChores: updatedCompletedChoresList },
       { returnDocument: 'after', populate: 'chores alerts' }
     );
+    await this.syncCompletionStat(childId, chore, updatedChild);
+    return updatedChild;
   }
 
   async markChoreAsNotDone(childId: string, chore: string) {
@@ -82,10 +99,89 @@ export class ChildService {
     const updatedCompletedChoresList = outDatedChild.completedChores.filter(
       (c) => c._id.toString() !== chore
     );
-    return await this.ChildModel.findOneAndUpdate(
+    const updatedChild = await this.ChildModel.findOneAndUpdate(
       { _id: childId },
       { completedChores: updatedCompletedChoresList },
       { returnDocument: 'after', populate: 'chores alerts' }
+    );
+    await this.syncCompletionStat(childId, chore, updatedChild);
+    return updatedChild;
+  }
+
+  private isCompletedToday(dateCompleted: string | Date) {
+    const completedAt = new Date(dateCompleted);
+    const today = new Date();
+    return (
+      completedAt.getDate() === today.getDate() &&
+      completedAt.getMonth() === today.getMonth() &&
+      completedAt.getFullYear() === today.getFullYear()
+    );
+  }
+
+  private formatDateKey(date = new Date()) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  private async syncCompletionStat(
+    childId: string,
+    choreId: string,
+    child: ChildDocument,
+  ) {
+    try {
+      const chore = await this.ChoreModel.findById(choreId).lean().exec();
+      if (!chore?.dayPart) return;
+
+      const dayPart = chore.dayPart.toLowerCase();
+      const todayName = DAYS_OF_WEEK[new Date().getDay()];
+      const dayPartChores = (child.chores || []).filter((c: any) => {
+        const part = (c.dayPart || '').toLowerCase();
+        const days = c.days || [];
+        return part === dayPart && days.includes(todayName);
+      });
+
+      const total = dayPartChores.length;
+      if (!total) return;
+
+      const completed = dayPartChores.filter((c: any) =>
+        (child.completedChores || []).some(
+          (cc) =>
+            cc._id.toString() === c._id.toString() &&
+            this.isCompletedToday(cc.dateCompleted),
+        ),
+      ).length;
+
+      const parent = await this.UserModel.findOne({
+        children: new Types.ObjectId(childId),
+      } as any)
+        .select('_id')
+        .lean()
+        .exec();
+      if (!parent?._id) {
+        this.logger.warn(`No parent found for child ${childId}; skipping completion stat`);
+        return;
+      }
+
+      await this.completionStatService.upsertDailyStat({
+        childId,
+        parentId: parent._id.toString(),
+        date: this.formatDateKey(),
+        dayPart,
+        completed,
+        total,
+      });
+    } catch (err) {
+      // Completion tracking should not block chore toggles
+      this.logger.error('Failed to sync completion stat', err as Error);
+    }
+  }
+
+  async pullAlertFromAllChildren(alertId: string) {
+    return await this.ChildModel.updateMany(
+      { alerts: alertId } as any,
+      { $pull: { alerts: alertId } },
     );
   }
 

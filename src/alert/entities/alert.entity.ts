@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { HydratedDocument } from 'mongoose';
-import { Child } from 'src/child/entities/child.entity';
+import { HydratedDocument, Types } from 'mongoose';
 
 export type AlertDocument = HydratedDocument<Alert>;
 
@@ -12,6 +11,9 @@ export class Alert {
 
   @Prop({ required: true, minlength: 1 })
   icons: string[];
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  createdBy: Types.ObjectId;
 }
 
 export const AlertSchema = SchemaFactory.createForClass(Alert);

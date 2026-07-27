@@ -1,15 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { AlertService } from './alert.service';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request } from '@nestjs/common';
+import { AlertService, UpdateAlertWithAssignees } from './alert.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
-import { UpdateAlertDto } from './dto/update-alert.dto';
 
 @Controller('alert')
 export class AlertController {
   constructor(private readonly alertService: AlertService) {}
 
   @Post()
-  create(@Body() createAlertDto: CreateAlertDto) {
-    return this.alertService.create(createAlertDto);
+  create(@Body() createAlertDto: CreateAlertDto, @Request() req) {
+    return this.alertService.create(createAlertDto, req?.user?.userId);
   }
 
   @Get()
@@ -17,18 +16,23 @@ export class AlertController {
     return this.alertService.findAll();
   }
 
+  @Get('alerts-for-user/:userId')
+  findAllByUser(@Param('userId') userId: string) {
+    return this.alertService.findAllByUser(userId);
+  }
+
+  @Get('tasks-by-user/:userId')
+  findAllTasksByUser(@Param('userId') userId: string) {
+    return this.alertService.findAllTasksByUser(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.alertService.findOne(id);
   }
 
-  @Get('alerts-for-user/:userId')
-  findAllByUser(@Param('userId') userId: string) {
-    return this.alertService.findAllByUser(userId)
-  }
-
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAlertDto: UpdateAlertDto) {
+  update(@Param('id') id: string, @Body() updateAlertDto: UpdateAlertWithAssignees) {
     return this.alertService.update(id, updateAlertDto);
   }
 

@@ -12,10 +12,10 @@ import { ChildModule } from './child/child.module';
 import { ChoreModule } from './chore/chore.module';
 import { AlertModule } from './alert/alert.module';
 import { AuthModule } from './auth/auth.module';
+import { CompletionStatModule } from './completion-stat/completion-stat.module';
+import { CompletionStatSchema } from './completion-stat/entities/completion-stat.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
-import { AttachUserToRequest } from './middlewares/attachUserToRequest.middleware';
-import { UserIsRequester } from './middlewares/userIsRequester.middleware';
 import { StripAndCheckRole } from './middlewares/stripAndCheckRole.middleware';
 import { ScheduleModule } from '@nestjs/schedule';
 
@@ -29,11 +29,13 @@ import { ScheduleModule } from '@nestjs/schedule';
     MongooseModule.forFeature([{ name: 'Child', schema: ChildSchema}]),
     MongooseModule.forFeature([{ name: 'Alert', schema: AlertSchema}]),
     MongooseModule.forFeature([{ name: 'Chore', schema: ChoreSchema}]),
+    MongooseModule.forFeature([{ name: 'CompletionStat', schema: CompletionStatSchema}]),
     UserModule,
     ChildModule,
     ChoreModule,
     AlertModule,
     AuthModule,
+    CompletionStatModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
@@ -45,9 +47,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(AttachUserToRequest,UserIsRequester)
-      .forRoutes({ path: 'alert/*', method: RequestMethod.PATCH });
     consumer
       .apply(StripAndCheckRole)
       .forRoutes({ path: 'user/:id/update-role', method: RequestMethod.PATCH });
