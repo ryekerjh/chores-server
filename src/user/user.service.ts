@@ -164,5 +164,27 @@ export class UserService {
       throw err;
     }
   }
+
+  async registerPushToken(userId: string, token: string) {
+    if (!token || typeof token !== 'string') {
+      throw new Error('Push token is required');
+    }
+    return await this.UserModel.findOneAndUpdate(
+      { _id: userId },
+      { $addToSet: { expoPushTokens: token } } as any,
+      { returnDocument: 'after', select: 'expoPushTokens' },
+    );
+  }
+
+  async unregisterPushToken(userId: string, token: string) {
+    if (!token) {
+      return await this.UserModel.findById(userId).select('expoPushTokens');
+    }
+    return await this.UserModel.findOneAndUpdate(
+      { _id: userId },
+      { $pull: { expoPushTokens: token } } as any,
+      { returnDocument: 'after', select: 'expoPushTokens' },
+    );
+  }
 }
 
