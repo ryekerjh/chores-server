@@ -28,6 +28,10 @@ export class User {
 
   @Prop({ required: false, maxLength: 8, minLength: 3 })
   pin: number;
+
+  /** Expo push tokens for the parent mobile app (deduped). */
+  @Prop({ type: [String], default: [] })
+  expoPushTokens: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

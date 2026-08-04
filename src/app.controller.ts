@@ -20,6 +20,7 @@ export class AppController {
         response['token'] = access_token;
         response['userId'] = loginUser['_id'];
         response['alerts'] = await this.alertService.findAllByUser(loginUser['_id'] );
+        response['children'] = loginUser['children'] || [];
       } else {
         // Default payload for browser or other platforms
         response['token'] = access_token;

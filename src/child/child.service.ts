@@ -5,11 +5,13 @@ import { Cron } from '@nestjs/schedule';
 import moment from 'moment';
 import { UserService } from 'src/user/user.service';
 import { CompletionStatService } from 'src/completion-stat/completion-stat.service';
+import { NotificationService } from 'src/notification/notification.service';
 import { CreateChildDto } from './dto/create-child.dto';
 import { UpdateChildDto } from './dto/update-child.dto';
 import { Child, ChildDocument } from './entities/child.entity';
 import { Chore } from 'src/chore/entities/chore.entity';
 import { User } from 'src/user/entities/user.entity';
+import { Alert } from 'src/alert/entities/alert.entity';
 
 const DAYS_OF_WEEK = [
   'Sunday',
@@ -29,8 +31,10 @@ export class ChildService {
     @InjectModel('Child') private ChildModel: Model<ChildDocument>,
     @InjectModel('Chore') private ChoreModel: Model<Chore>,
     @InjectModel('User') private UserModel: Model<User>,
+    @InjectModel('Alert') private AlertModel: Model<Alert>,
     private userService: UserService,
     private readonly completionStatService: CompletionStatService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(createChildDto: CreateChildDto) {
@@ -90,7 +94,8 @@ export class ChildService {
       { completedChores: updatedCompletedChoresList },
       { returnDocument: 'after', populate: 'chores alerts' }
     );
-    await this.syncCompletionStat(childId, chore, updatedChild);
+    const syncResult = await this.syncCompletionStat(childId, chore, updatedChild);
+    await this.notifyChoreProgress(updatedChild, chore, syncResult, true);
     return updatedChild;
   }
 
@@ -129,10 +134,16 @@ export class ChildService {
     childId: string,
     choreId: string,
     child: ChildDocument,
-  ) {
+  ): Promise<{
+    parentId?: string;
+    dayPart?: string;
+    completed?: number;
+    total?: number;
+    choreName?: string;
+  } | null> {
     try {
       const chore = await this.ChoreModel.findById(choreId).lean().exec();
-      if (!chore?.dayPart) return;
+      if (!chore?.dayPart) return null;
 
       const dayPart = chore.dayPart.toLowerCase();
       const todayName = DAYS_OF_WEEK[new Date().getDay()];
@@ -143,7 +154,7 @@ export class ChildService {
       });
 
       const total = dayPartChores.length;
-      if (!total) return;
+      if (!total) return null;
 
       const completed = dayPartChores.filter((c: any) =>
         (child.completedChores || []).some(
@@ -161,7 +172,7 @@ export class ChildService {
         .exec();
       if (!parent?._id) {
         this.logger.warn(`No parent found for child ${childId}; skipping completion stat`);
-        return;
+        return null;
       }
 
       await this.completionStatService.upsertDailyStat({
@@ -172,9 +183,66 @@ export class ChildService {
         completed,
         total,
       });
+
+      return {
+        parentId: parent._id.toString(),
+        dayPart,
+        completed,
+        total,
+        choreName: chore.name,
+      };
     } catch (err) {
       // Completion tracking should not block chore toggles
       this.logger.error('Failed to sync completion stat', err as Error);
+      return null;
+    }
+  }
+
+  private async notifyChoreProgress(
+    child: ChildDocument,
+    choreId: string,
+    syncResult: {
+      parentId?: string;
+      dayPart?: string;
+      completed?: number;
+      total?: number;
+      choreName?: string;
+    } | null,
+    isMarkDone: boolean,
+  ) {
+    if (!isMarkDone || !syncResult?.parentId) return;
+
+    const childName = child.name || 'Your child';
+    const choreName = syncResult.choreName || 'a chore';
+
+    try {
+      if (
+        syncResult.total > 0 &&
+        syncResult.completed === syncResult.total
+      ) {
+        await this.notificationService.sendToUser(syncResult.parentId, {
+          title: `${childName} cleared ${syncResult.dayPart?.toUpperCase()} chores!`,
+          body: `${childName} finished all ${syncResult.total} ${syncResult.dayPart?.toUpperCase()} chores for today.`,
+          data: {
+            type: 'day_part_complete',
+            childId: (child as any)._id?.toString(),
+            dayPart: syncResult.dayPart,
+          },
+        });
+      } else {
+        await this.notificationService.sendToUser(syncResult.parentId, {
+          title: `${childName} finished a chore`,
+          body: `${childName} completed “${choreName}” (${syncResult.completed}/${syncResult.total} ${syncResult.dayPart?.toUpperCase()}).`,
+          data: {
+            type: 'chore_done',
+            childId: (child as any)._id?.toString(),
+            choreId,
+            dayPart: syncResult.dayPart,
+          },
+        });
+      }
+    } catch (err) {
+      this.logger.error('Failed to send chore progress push', err as Error);
     }
   }
 
@@ -197,6 +265,22 @@ export class ChildService {
     const updatedUser = await this.userService.update(parentId, {
       alerts: dedupeIDs(updatedParentAlerts) as any,
     });
+
+    try {
+      const alert = await this.AlertModel.findById(alertId).lean().exec();
+      const alertName = alert?.name || 'an update';
+      await this.notificationService.sendToUser(parentId, {
+        title: 'Kid alert',
+        body: `Someone needs you to know: ${alertName}`,
+        data: {
+          type: 'alert',
+          alertId,
+        },
+      });
+    } catch (err) {
+      this.logger.error('Failed to send alert push', err as Error);
+    }
+
     return updatedUser.alerts;
   }
 

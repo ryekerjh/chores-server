@@ -59,6 +59,26 @@ export class UserController {
     return this.userService.removeAlertFromUser(id, alertId.alertId);
   }
 
+  @Patch(':id/push-token')
+  registerPushToken(
+    @Param('id') id: string,
+    @Body() body: { token: string },
+    @Request() req,
+  ) {
+    const userId = req?.user?.userId || id;
+    return this.userService.registerPushToken(userId, body.token);
+  }
+
+  @Delete(':id/push-token')
+  unregisterPushToken(
+    @Param('id') id: string,
+    @Body() body: { token: string },
+    @Request() req,
+  ) {
+    const userId = req?.user?.userId || id;
+    return this.userService.unregisterPushToken(userId, body?.token);
+  }
+
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(id);
